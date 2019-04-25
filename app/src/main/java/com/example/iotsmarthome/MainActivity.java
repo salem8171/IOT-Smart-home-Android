@@ -1,5 +1,5 @@
 package com.example.iotsmarthome;
-
+//3aslemaaaaaaaaaaaaaaaaaaaa :p
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
