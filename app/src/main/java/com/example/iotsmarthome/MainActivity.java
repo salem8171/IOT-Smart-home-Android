@@ -1,6 +1,9 @@
 package com.example.iotsmarthome;
-//3aslemaaaaaaaaaaaaaaaaaaaa :p
-// MSK was here
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -22,8 +25,6 @@ public class MainActivity extends AppCompatActivity {
     Button buttonConnect;
     Button buttonPublish;
 
-    MqttAndroidClient mqttClient;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,41 +38,28 @@ public class MainActivity extends AppCompatActivity {
         buttonConnect.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mqttClient = new MqttAndroidClient(MainActivity.this, "tcp://" + editTextBroker.getText() + ":1883", MqttClient.generateClientId());
-
-                try
-                {
-                    mqttClient.connect().setActionCallback(new IMqttActionListener() {
-                        @Override
-                        public void onSuccess(IMqttToken asyncActionToken) {
-                            Toast.makeText(MainActivity.this, "Connected successfully to the mqtt broker", Toast.LENGTH_LONG).show();
-                        }
-
-                        @Override
-                        public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
-                            Toast.makeText(MainActivity.this, "Failed to connect to the mqtt broker", Toast.LENGTH_LONG).show();
-                        }
-                    });
-                } catch (MqttException exception)
-                {
-                    Toast.makeText(MainActivity.this, "MqttException occured", Toast.LENGTH_LONG).show();
-                }
+                Intent mqttServiceIntent = new Intent(MainActivity.this, MqttService.class);
+                mqttServiceIntent.putExtra(MqttService.EXTRA_MQTT_SERVER_DOMAIN, editTextBroker.getText().toString());
+                startService(mqttServiceIntent);
             }
         });
 
         buttonPublish.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try
-                {
-                    MqttMessage message = new MqttMessage(new String("Hello").getBytes());
-                    mqttClient.publish(editTextTopic.getText().toString(), message);
-                } catch (MqttException exception)
-                {
-                    Toast.makeText(MainActivity.this, "MqttException occured", Toast.LENGTH_LONG).show();
-                }
+                Intent mqttPublishIntent = new Intent(MqttService.ACTION_MQTT_PUBLISH);
+                mqttPublishIntent.putExtra(MqttService.EXTRA_MQTT_TOPIC, editTextTopic.getText().toString());
+                mqttPublishIntent.putExtra(MqttService.EXTRA_MQTT_MESSAGE, "Hello from android");
+                LocalBroadcastManager.getInstance(MainActivity.this).sendBroadcast(mqttPublishIntent);
             }
         });
+
+        LocalBroadcastManager.getInstance(MainActivity.this).registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Toast.makeText(MainActivity.this, intent.getStringExtra(MqttService.EXTRA_MQTT_MESSAGE), Toast.LENGTH_LONG).show();
+            }
+        }, new IntentFilter(MqttService.ACTION_MQTT_SUBSCRIBE));
 
     }
 }
