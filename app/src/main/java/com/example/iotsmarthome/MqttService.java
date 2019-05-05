@@ -6,7 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.IBinder;
-import android.os.Message;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.Toast;
 
@@ -55,11 +56,17 @@ public class MqttService extends Service {
                     try {
                         mqttClient.subscribe("topic", 1, new IMqttMessageListener() {
                             @Override
-                            public void messageArrived(String topic, MqttMessage message) throws Exception {
+                            public void messageArrived(String topic, MqttMessage message) {
                                 Intent subscriptionIntent = new Intent(MqttService.ACTION_MQTT_SUBSCRIBE);
                                 subscriptionIntent.putExtra(MqttService.EXTRA_MQTT_TOPIC, topic);
                                 subscriptionIntent.putExtra(MqttService.EXTRA_MQTT_MESSAGE, message.toString());
                                 LocalBroadcastManager.getInstance(MqttService.this).sendBroadcast(subscriptionIntent);
+
+                                NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(MqttService.this)
+                                        .setSmallIcon(R.drawable.icon)
+                                        .setContentTitle("new message arrived")
+                                        .setContentText("message content");
+                                NotificationManagerCompat.from(MqttService.this).notify(2, notificationBuilder.build());
                             }
                         });
                     } catch (MqttException e) {
@@ -81,7 +88,6 @@ public class MqttService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
     }
 }
